@@ -1,0 +1,1615 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TuProfe20 — Práctica Calificada: 4.º Grado de Primaria</title>
+
+    <!-- Tailwind CSS para diseño responsive -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Google Fonts: Fredoka (divertida y amigable) y Nunito (alta legibilidad) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@600;700;800;900&display=swap" rel="stylesheet">
+
+    <!-- Font Awesome para íconos -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+
+    <!-- KaTeX para tipografía matemática tipo LaTeX -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+
+    <!-- Tone.js para efectos de sonido sintetizados -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+
+    <!-- Canvas Confetti para la celebración final -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+
+    <style>
+        /* =====================================================================
+           ESTILOS BASE, SCROLL SEGURO Y TIPOGRAFÍA
+           ===================================================================== */
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            min-height: 100vh;
+            overflow-y: auto;
+            overflow-x: hidden;
+            font-family: 'Nunito', sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 45%, #1d4ed8 100%);
+            background-attachment: fixed;
+            color: #f8fafc;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .font-fun {
+            font-family: 'Fredoka', sans-serif;
+        }
+
+        /* Canvas de fondo fijo y no interactivo */
+        #bg-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        /* Contenedor principal por encima del fondo */
+        #app-wrapper {
+            position: relative;
+            z-index: 10;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Tarjetas claras de alto contraste para aula y proyector */
+        .card-bright {
+            background: rgba(255, 255, 255, 0.96);
+            color: #1e293b;
+            border: 3px solid rgba(255, 255, 255, 0.9);
+            box-shadow: 0 20px 45px rgba(15, 23, 42, 0.35);
+        }
+
+        .card-glass {
+            background: rgba(15, 23, 42, 0.65);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            border: 2px solid rgba(255, 255, 255, 0.18);
+            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Botones de alternativa */
+        .option-btn {
+            background: #ffffff;
+            border: 3px solid #e2e8f0;
+            border-radius: 1.5rem;
+            transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1),
+                        border-color 0.2s ease,
+                        box-shadow 0.2s ease,
+                        background-color 0.2s ease;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .option-btn:hover:not(:disabled) {
+            transform: translateY(-4px) scale(1.015);
+            border-color: #38bdf8;
+            box-shadow: 0 12px 26px rgba(56, 189, 248, 0.35);
+            background: #f0f9ff;
+        }
+
+        .option-btn:active:not(:disabled) {
+            transform: scale(0.98);
+        }
+
+        .option-btn.selected-neutral {
+            border-color: #2563eb !important;
+            background: #dbeafe !important;
+            box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.35), 0 14px 28px rgba(37, 99, 235, 0.25) !important;
+            transform: scale(1.02);
+        }
+
+        .option-btn:disabled {
+            cursor: default;
+        }
+
+        /* Ajustes KaTeX */
+        .math-inline .katex {
+            font-size: 1.35em;
+            color: #1d4ed8;
+            font-weight: 700;
+        }
+
+        .math-option .katex {
+            font-size: 2.35em;
+            font-weight: 700;
+        }
+
+        .math-solution .katex {
+            font-size: 1.25em;
+            color: #0f172a;
+        }
+
+        /* Animaciones */
+        @keyframes fadeSlideUp {
+            from {
+                opacity: 0;
+                transform: translateY(18px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .animate-enter {
+            animation: fadeSlideUp 0.4s ease-out forwards;
+        }
+
+        @keyframes pulseDanger {
+            0%, 100% {
+                transform: scale(1);
+                box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
+            }
+            50% {
+                transform: scale(1.03);
+                box-shadow: 0 0 0 10px rgba(239, 68, 68, 0);
+            }
+        }
+
+        .timer-danger {
+            animation: pulseDanger 0.9s infinite;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            15%, 45%, 75% { transform: translateX(-8px); }
+            30%, 60%, 90% { transform: translateX(8px); }
+        }
+
+        .animate-shake {
+            animation: shake 0.45s ease-in-out;
+        }
+
+        @keyframes floatBot {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-7px); }
+        }
+
+        .bot-float {
+            animation: floatBot 3s ease-in-out infinite;
+        }
+
+        @keyframes blinkEye {
+            0%, 94%, 100% { transform: scaleY(1); }
+            97% { transform: scaleY(0.1); }
+        }
+
+        .bot-eye {
+            transform-origin: center;
+            animation: blinkEye 4s infinite;
+        }
+
+        /* Pantallas */
+        .screen-view {
+            display: none;
+        }
+
+        .screen-view.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Fondo animado nativo en Canvas -->
+    <canvas id="bg-canvas" aria-hidden="true"></canvas>
+
+    <!-- Contenedor principal -->
+    <div id="app-wrapper" class="px-3 sm:px-6 py-4 sm:py-6 pb-28 sm:pb-24">
+
+        <!-- BARRA SUPERIOR GLOBAL -->
+        <nav class="w-full max-w-5xl mx-auto flex flex-wrap items-center justify-between gap-3 mb-5">
+            <div class="flex items-center gap-3 card-glass px-4 py-2 rounded-2xl">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-yellow-400 to-orange-500 flex items-center justify-center text-slate-900 font-fun font-bold text-lg shadow-md">
+                    20
+                </div>
+                <div class="leading-tight">
+                    <div class="font-fun font-bold text-lg sm:text-xl text-white tracking-wide">TuProfe20</div>
+                    <div class="text-xs text-cyan-200 font-bold uppercase tracking-wider">4.º Grado de Primaria</div>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-2">
+                <!-- Botón de audio seguro -->
+                <button id="btn-mute" type="button" onclick="AudioFX.toggleMute()"
+                    class="card-glass hover:bg-slate-800/80 text-white px-4 py-2.5 rounded-2xl font-fun font-semibold text-sm flex items-center gap-2 transition-all active:scale-95 cursor-pointer"
+                    title="Activar o silenciar sonido">
+                    <i id="mute-icon" class="fas fa-volume-up text-yellow-400"></i>
+                    <span id="mute-label" class="hidden sm:inline">Sonido activo</span>
+                </button>
+            </div>
+        </nav>
+
+        <!-- ===================================================================
+             PANTALLA 1: BIENVENIDA / INICIO
+             =================================================================== -->
+        <section id="screen-intro" class="screen-view active w-full max-w-4xl mx-auto my-auto animate-enter">
+            <div class="card-bright rounded-3xl p-6 sm:p-10 text-center relative overflow-hidden">
+                <!-- Franja decorativa superior -->
+                <div class="absolute top-0 left-0 right-0 h-3 bg-gradient-to-r from-cyan-400 via-fuchsia-500 to-yellow-400"></div>
+
+                <!-- Etiqueta de grado -->
+                <div class="inline-flex items-center gap-2 bg-gradient-to-r from-amber-400 to-orange-500 text-slate-900 font-fun font-bold text-xs sm:text-sm px-5 py-1.5 rounded-full shadow mb-4 uppercase tracking-wider">
+                    <i class="fas fa-graduation-cap"></i>
+                    <span>Práctica Calificada: 4.º Grado de Primaria</span>
+                </div>
+
+                <!-- Título principal -->
+                <h1 class="font-fun text-4xl sm:text-6xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 via-fuchsia-600 to-orange-500 mb-3">
+                    TuProfe20
+                </h1>
+                <h2 class="font-fun text-xl sm:text-3xl font-bold text-slate-800 mb-4">
+                    Desafío de Fracciones Equivalentes y Números Mixtos
+                </h2>
+
+                <p class="text-slate-600 text-base sm:text-lg max-w-2xl mx-auto mb-7 font-semibold leading-relaxed">
+                    Observa con mucha atención cada gráfico y selecciona la respuesta correcta antes de que termine el tiempo. ¡Demuestra todo lo que sabes en clase!
+                </p>
+
+                <!-- Tarjetas informativas -->
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8 text-left">
+                    <div class="bg-blue-50 border-2 border-blue-200 rounded-2xl p-4 flex items-center gap-3">
+                        <div class="w-12 h-12 rounded-xl bg-blue-500 text-white flex items-center justify-center text-xl shrink-0 shadow">
+                            <i class="fas fa-shapes"></i>
+                        </div>
+                        <div>
+                            <div class="font-fun font-bold text-blue-900 text-lg">8 Preguntas</div>
+                            <div class="text-xs sm:text-sm text-blue-700 font-bold">6 equivalentes y 2 mixtos</div>
+                        </div>
+                    </div>
+
+                    <div class="bg-amber-50 border-2 border-amber-200 rounded-2xl p-4 flex items-center gap-3">
+                        <div class="w-12 h-12 rounded-xl bg-amber-500 text-white flex items-center justify-center text-xl shrink-0 shadow">
+                            <i class="fas fa-stopwatch"></i>
+                        </div>
+                        <div>
+                            <div class="font-fun font-bold text-amber-900 text-lg">2 Minutos</div>
+                            <div class="text-xs sm:text-sm text-amber-700 font-bold">Máximo por cada ejercicio</div>
+                        </div>
+                    </div>
+
+                    <div class="bg-fuchsia-50 border-2 border-fuchsia-200 rounded-2xl p-4 flex items-center gap-3">
+                        <div class="w-12 h-12 rounded-xl bg-fuchsia-500 text-white flex items-center justify-center text-xl shrink-0 shadow">
+                            <i class="fas fa-lock"></i>
+                        </div>
+                        <div>
+                            <div class="font-fun font-bold text-fuchsia-900 text-lg">Resultados al Final</div>
+                            <div class="text-xs sm:text-sm text-fuchsia-700 font-bold">Con clave del docente</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Botón Iniciar -->
+                <button id="btn-start" type="button" onclick="startQuiz()"
+                    class="w-full sm:w-auto inline-flex items-center justify-center gap-3 bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 hover:from-emerald-400 hover:to-cyan-400 text-white font-fun font-bold text-xl sm:text-2xl px-10 py-4 rounded-full shadow-xl hover:shadow-2xl transform hover:-translate-y-1 active:scale-95 transition-all cursor-pointer">
+                    <i class="fas fa-rocket"></i>
+                    <span>INICIAR PRÁCTICA</span>
+                </button>
+            </div>
+        </section>
+
+        <!-- ===================================================================
+             PANTALLA 2: CUESTIONARIO INTERACTIVO
+             =================================================================== -->
+        <section id="screen-quiz" class="screen-view w-full max-w-5xl mx-auto">
+
+            <!-- Panel superior de estado (Progreso + Temporizador) -->
+            <div class="card-glass rounded-3xl p-4 sm:p-5 mb-5">
+                <div class="flex flex-wrap items-center justify-between gap-3 mb-3">
+                    <!-- Indicador de pregunta -->
+                    <div class="flex items-center gap-3">
+                        <span id="q-badge-num" class="bg-gradient-to-r from-fuchsia-500 to-pink-500 text-white font-fun font-bold text-base sm:text-lg px-4 py-1.5 rounded-full shadow">
+                            Pregunta 1 de 8
+                        </span>
+                        <span id="q-badge-topic" class="bg-white/15 border border-white/25 text-cyan-200 font-fun font-semibold text-xs sm:text-sm px-3 py-1 rounded-full">
+                            Fracciones Equivalentes
+                        </span>
+                    </div>
+
+                    <!-- Reloj regresivo -->
+                    <div id="timer-box" class="flex items-center gap-2 bg-emerald-500 text-white font-fun font-bold text-lg sm:text-2xl px-4 py-1.5 rounded-2xl shadow-lg transition-colors duration-300">
+                        <i class="fas fa-clock"></i>
+                        <span id="timer-text">02:00</span>
+                    </div>
+                </div>
+
+                <!-- Barra de tiempo -->
+                <div class="w-full h-3.5 bg-slate-900/70 rounded-full overflow-hidden border border-white/15">
+                    <div id="timer-bar" class="h-full bg-emerald-400 rounded-full transition-all duration-500" style="width: 100%;"></div>
+                </div>
+
+                <!-- Puntos de progreso de las 8 preguntas -->
+                <div id="progress-dots" class="flex items-center justify-center gap-2 mt-3" aria-label="Progreso de preguntas"></div>
+            </div>
+
+            <!-- Tarjeta de la pregunta -->
+            <div id="question-card" class="card-bright rounded-3xl p-5 sm:p-8 mb-5 animate-enter">
+                <div class="text-center">
+                    <h2 id="question-prompt" class="font-fun text-xl sm:text-3xl font-bold text-slate-800 leading-snug mb-4">
+                        Cargando pregunta...
+                    </h2>
+                    <!-- Contenedor para el gráfico SVG de la pregunta (si aplica) -->
+                    <div id="question-visual" class="flex justify-center items-center my-4"></div>
+                </div>
+
+                <!-- Aviso neutral de confirmación / tiempo agotado -->
+                <div id="status-banner" class="hidden mt-4 py-3 px-5 rounded-2xl font-fun font-bold text-center text-base sm:text-lg shadow-sm"></div>
+            </div>
+
+            <!-- Cuadrícula de 4 alternativas -->
+            <div id="options-grid" class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
+                <!-- Generado dinámicamente por JS -->
+            </div>
+        </section>
+
+        <!-- ===================================================================
+             PANTALLA 3: BLOQUEO DOCENTE (CLAVE SECRETA)
+             =================================================================== -->
+        <section id="screen-lock" class="screen-view w-full max-w-xl mx-auto my-auto animate-enter">
+            <div id="lock-card" class="card-bright rounded-3xl p-6 sm:p-10 text-center relative overflow-hidden">
+                <div class="absolute top-0 left-0 right-0 h-3 bg-gradient-to-r from-amber-400 via-orange-500 to-fuchsia-500"></div>
+
+                <div class="w-24 h-24 mx-auto mb-5 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 text-white flex items-center justify-center text-4xl shadow-xl">
+                    <i class="fas fa-lock"></i>
+                </div>
+
+                <div class="inline-block bg-emerald-100 text-emerald-800 font-fun font-bold text-sm px-4 py-1 rounded-full mb-3">
+                    <i class="fas fa-check-circle mr-1"></i> ¡Práctica Finalizada!
+                </div>
+
+                <h2 class="font-fun text-3xl sm:text-4xl font-bold text-slate-800 mb-2">
+                    ¡Excelente esfuerzo!
+                </h2>
+                <p class="text-slate-600 font-semibold text-base sm:text-lg mb-6">
+                    Tus 8 respuestas han sido guardadas. Pide a tu profesor(a) que ingrese la clave docente para ver tu nota y el solucionario visual.
+                </p>
+
+                <!-- Formulario de clave docente -->
+                <div class="bg-slate-50 border-2 border-slate-200 rounded-2xl p-5 mb-4">
+                    <label for="teacher-key-input" class="block text-left font-fun font-bold text-slate-700 text-sm mb-2 uppercase tracking-wider">
+                        <i class="fas fa-key text-amber-500 mr-1"></i> Clave del Docente
+                    </label>
+                    <div class="relative flex items-center">
+                        <input id="teacher-key-input" type="password" inputmode="numeric" autocomplete="off"
+                            placeholder="Ingresa la clave docente..."
+                            class="w-full bg-white border-2 border-slate-300 focus:border-blue-500 focus:outline-none rounded-xl px-4 py-3.5 pr-12 text-lg font-bold text-slate-800 tracking-widest transition-colors">
+                        <button type="button" onclick="toggleKeyVisibility()"
+                            class="absolute right-3 text-slate-400 hover:text-slate-700 p-2 cursor-pointer"
+                            title="Mostrar u ocultar clave">
+                            <i id="key-eye-icon" class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                    <p id="lock-error-msg" class="hidden text-red-600 font-bold text-sm mt-2 text-left">
+                        <i class="fas fa-exclamation-circle mr-1"></i> Clave incorrecta. Inténtalo nuevamente.
+                    </p>
+                </div>
+
+                <button id="btn-unlock" type="button" onclick="validateTeacherKey()"
+                    class="w-full bg-gradient-to-r from-blue-600 via-indigo-600 to-fuchsia-600 hover:from-blue-500 hover:to-fuchsia-500 text-white font-fun font-bold text-lg sm:text-xl py-4 px-6 rounded-2xl shadow-lg hover:shadow-xl active:scale-95 transition-all flex items-center justify-center gap-3 cursor-pointer">
+                    <i class="fas fa-unlock-alt"></i>
+                    <span>DESBLOQUEAR SOLUCIONARIO</span>
+                </button>
+            </div>
+        </section>
+
+        <!-- ===================================================================
+             PANTALLA 4: RESULTADOS Y SOLUCIONARIO VISUAL COMPLETO
+             =================================================================== -->
+        <section id="screen-results" class="screen-view w-full max-w-5xl mx-auto animate-enter">
+
+            <!-- Resumen de calificaciones -->
+            <div class="card-bright rounded-3xl p-6 sm:p-8 mb-6 relative overflow-hidden">
+                <div class="absolute top-0 left-0 right-0 h-3 bg-gradient-to-r from-emerald-400 via-cyan-400 to-blue-500"></div>
+
+                <div class="text-center mb-6">
+                    <div class="inline-flex items-center gap-2 bg-yellow-100 text-amber-800 font-fun font-bold text-sm px-4 py-1.5 rounded-full mb-3">
+                        <i class="fas fa-trophy text-amber-500"></i>
+                        <span>Resultados Oficiales — TuProfe20</span>
+                    </div>
+                    <h2 class="font-fun text-3xl sm:text-5xl font-bold text-slate-800 mb-2">
+                        ¡Reporte de Práctica Calificada!
+                    </h2>
+                    <p id="result-rank-badge" class="font-fun text-lg sm:text-xl font-bold text-blue-600"></p>
+                </div>
+
+                <!-- 3 Tarjetas de métricas principales -->
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+                    <div class="bg-gradient-to-br from-blue-600 to-indigo-700 text-white rounded-2xl p-5 text-center shadow-lg">
+                        <div class="text-xs sm:text-sm font-fun uppercase tracking-wider text-blue-200 mb-1">Nota Vigesimal</div>
+                        <div id="res-grade" class="font-fun text-5xl font-bold">0<span class="text-2xl text-blue-200"> / 20</span></div>
+                    </div>
+                    <div class="bg-gradient-to-br from-emerald-500 to-teal-600 text-white rounded-2xl p-5 text-center shadow-lg">
+                        <div class="text-xs sm:text-sm font-fun uppercase tracking-wider text-emerald-100 mb-1">Aciertos</div>
+                        <div id="res-hits" class="font-fun text-5xl font-bold">0<span class="text-2xl text-emerald-100"> / 8</span></div>
+                    </div>
+                    <div class="bg-gradient-to-br from-fuchsia-500 to-pink-600 text-white rounded-2xl p-5 text-center shadow-lg">
+                        <div class="text-xs sm:text-sm font-fun uppercase tracking-wider text-pink-100 mb-1">Porcentaje</div>
+                        <div id="res-percent" class="font-fun text-5xl font-bold">0%</div>
+                    </div>
+                </div>
+
+                <!-- Desempeño por bloque temático -->
+                <div class="bg-slate-50 border-2 border-slate-200 rounded-2xl p-5">
+                    <h3 class="font-fun font-bold text-lg text-slate-800 mb-4 flex items-center gap-2">
+                        <i class="fas fa-chart-bar text-blue-600"></i> Desempeño por Bloque Temático
+                    </h3>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <!-- Bloque 1 -->
+                        <div class="bg-white rounded-xl p-4 border border-slate-200 shadow-sm">
+                            <div class="flex justify-between items-center mb-2">
+                                <span class="font-bold text-slate-700 text-sm sm:text-base">Fracciones Equivalentes</span>
+                                <span id="block-equiv-score" class="font-fun font-bold text-blue-600 text-base">0 / 6</span>
+                            </div>
+                            <div class="w-full h-3 bg-slate-200 rounded-full overflow-hidden">
+                                <div id="block-equiv-bar" class="h-full bg-blue-500 rounded-full transition-all duration-700" style="width: 0%;"></div>
+                            </div>
+                        </div>
+
+                        <!-- Bloque 2 -->
+                        <div class="bg-white rounded-xl p-4 border border-slate-200 shadow-sm">
+                            <div class="flex justify-between items-center mb-2">
+                                <span class="font-bold text-slate-700 text-sm sm:text-base">Mixto a Impropia</span>
+                                <span id="block-mixed-score" class="font-fun font-bold text-fuchsia-600 text-base">0 / 2</span>
+                            </div>
+                            <div class="w-full h-3 bg-slate-200 rounded-full overflow-hidden">
+                                <div id="block-mixed-bar" class="h-full bg-fuchsia-500 rounded-full transition-all duration-700" style="width: 0%;"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Solucionario visual completo de las 8 preguntas -->
+            <div class="mb-6">
+                <div class="flex items-center justify-between flex-wrap gap-3 mb-4">
+                    <h3 class="font-fun text-2xl sm:text-3xl font-bold text-white flex items-center gap-3">
+                        <i class="fas fa-book-open text-yellow-400"></i>
+                        <span>Solucionario Visual Paso a Paso</span>
+                    </h3>
+                </div>
+                <div id="solutions-list" class="space-y-5">
+                    <!-- Generado dinámicamente por JS -->
+                </div>
+            </div>
+
+            <!-- Botón reiniciar práctica -->
+            <div class="text-center pb-6">
+                <button type="button" onclick="restartQuiz()"
+                    class="inline-flex items-center justify-center gap-3 bg-gradient-to-r from-amber-400 via-orange-500 to-pink-500 hover:from-amber-300 hover:to-pink-400 text-white font-fun font-bold text-xl px-10 py-4 rounded-full shadow-xl hover:shadow-2xl transform hover:-translate-y-1 active:scale-95 transition-all cursor-pointer">
+                    <i class="fas fa-redo-alt"></i>
+                    <span>NUEVA PRÁCTICA</span>
+                </button>
+            </div>
+        </section>
+
+    </div>
+
+    <!-- =======================================================================
+         ASISTENTE ANIMADO PROFEBOT (ESQUINA INFERIOR DERECHA)
+         ======================================================================= -->
+    <div id="profebot-widget" class="fixed bottom-3 right-3 sm:bottom-5 sm:right-5 z-40 flex items-end gap-2 max-w-[92vw] pointer-events-none">
+        <!-- Globo de diálogo -->
+        <div id="bot-bubble" class="pointer-events-auto bg-white text-slate-800 border-3 border-cyan-400 rounded-2xl rounded-br-none px-4 py-2.5 shadow-xl max-w-[220px] sm:max-w-[260px] text-xs sm:text-sm font-bold leading-snug transition-all duration-300 opacity-100">
+            ¡Hola! Soy <span class="text-blue-600 font-fun">ProfeBot</span>. ¡Mucho éxito en tu práctica de hoy!
+        </div>
+
+        <!-- SVG de ProfeBot -->
+        <button type="button" onclick="ProfeBot.cheer()" aria-label="Saludar a ProfeBot"
+            class="pointer-events-auto bot-float focus:outline-none cursor-pointer shrink-0" title="¡Haz clic en ProfeBot!">
+            <svg width="68" height="78" viewBox="0 0 100 115" fill="none" xmlns="http://www.w3.org/2000/svg" class="drop-shadow-lg">
+                <!-- Antena -->
+                <line x1="50" y1="24" x2="50" y2="10" stroke="#facc15" stroke-width="5" stroke-linecap="round"/>
+                <circle cx="50" cy="8" r="7" fill="#facc15"/>
+                <!-- Orejas -->
+                <rect x="8" y="42" width="10" height="22" rx="5" fill="#ec4899"/>
+                <rect x="82" y="42" width="10" height="22" rx="5" fill="#ec4899"/>
+                <!-- Cabeza -->
+                <rect x="16" y="24" width="68" height="52" rx="18" fill="#38bdf8" stroke="#0284c7" stroke-width="4"/>
+                <!-- Visor -->
+                <rect x="24" y="34" width="52" height="30" rx="10" fill="#0f172a"/>
+                <!-- Ojos -->
+                <circle cx="38" cy="48" r="5.5" fill="#34d399" class="bot-eye"/>
+                <circle cx="62" cy="48" r="5.5" fill="#34d399" class="bot-eye"/>
+                <!-- Sonrisa -->
+                <path d="M 43 56 Q 50 61 57 56" stroke="#facc15" stroke-width="3" stroke-linecap="round" fill="none"/>
+                <!-- Cuerpo -->
+                <rect x="28" y="78" width="44" height="30" rx="12" fill="#f97316" stroke="#ea580c" stroke-width="4"/>
+                <!-- Insignia 20 en el pecho -->
+                <circle cx="50" cy="93" r="9" fill="#fef08a"/>
+                <text x="50" y="96.5" text-anchor="middle" font-family="Fredoka, sans-serif" font-size="10" font-weight="700" fill="#1e293b">20</text>
+            </svg>
+        </button>
+    </div>
+
+    <script>
+    /* =========================================================================
+       1. FONDO ANIMADO NATIVO EN CANVAS (LIVIANO Y SIN DEPENDENCIAS EXTERNAS)
+       ========================================================================= */
+    const BgCanvas = {
+        canvas: null,
+        ctx: null,
+        shapes: [],
+        animId: null,
+
+        init() {
+            try {
+                this.canvas = document.getElementById('bg-canvas');
+                if (!this.canvas) return;
+                this.ctx = this.canvas.getContext('2d');
+                this.resize();
+                window.addEventListener('resize', () => this.resize());
+                this.createShapes();
+                this.loop();
+            } catch (e) {
+                console.warn('Error inicializando fondo canvas:', e);
+            }
+        },
+
+        resize() {
+            if (!this.canvas) return;
+            this.canvas.width = window.innerWidth;
+            this.canvas.height = window.innerHeight;
+        },
+
+        createShapes() {
+            const colors = ['#38bdf8', '#facc15', '#f472b6', '#34d399', '#fb923c', '#a78bfa'];
+            const types = ['circle', 'square', 'triangle', 'star'];
+            const count = Math.min(34, Math.max(18, Math.floor(window.innerWidth / 45)));
+            this.shapes = [];
+
+            for (let i = 0; i < count; i++) {
+                this.shapes.push({
+                    x: Math.random() * this.canvas.width,
+                    y: Math.random() * this.canvas.height,
+                    size: 10 + Math.random() * 20,
+                    vx: (Math.random() - 0.5) * 0.55,
+                    vy: -0.25 - Math.random() * 0.55,
+                    rotation: Math.random() * Math.PI * 2,
+                    vRot: (Math.random() - 0.5) * 0.015,
+                    color: colors[i % colors.length],
+                    type: types[i % types.length],
+                    alpha: 0.12 + Math.random() * 0.16
+                });
+            }
+        },
+
+        drawStar(ctx, r) {
+            ctx.beginPath();
+            for (let i = 0; i < 5; i++) {
+                const outerAngle = (i * 2 * Math.PI) / 5 - Math.PI / 2;
+                const innerAngle = outerAngle + Math.PI / 5;
+                ctx.lineTo(Math.cos(outerAngle) * r, Math.sin(outerAngle) * r);
+                ctx.lineTo(Math.cos(innerAngle) * (r * 0.45), Math.sin(innerAngle) * (r * 0.45));
+            }
+            ctx.closePath();
+            ctx.fill();
+        },
+
+        loop() {
+            if (!this.ctx || !this.canvas) return;
+            const ctx = this.ctx;
+            const w = this.canvas.width;
+            const h = this.canvas.height;
+
+            ctx.clearRect(0, 0, w, h);
+
+            for (const s of this.shapes) {
+                s.x += s.vx;
+                s.y += s.vy;
+                s.rotation += s.vRot;
+
+                // Reposicionar suavemente al salir de los bordes
+                if (s.y < -40) {
+                    s.y = h + 40;
+                    s.x = Math.random() * w;
+                }
+                if (s.x < -40) s.x = w + 40;
+                if (s.x > w + 40) s.x = -40;
+
+                ctx.save();
+                ctx.translate(s.x, s.y);
+                ctx.rotate(s.rotation);
+                ctx.globalAlpha = s.alpha;
+                ctx.fillStyle = s.color;
+
+                if (s.type === 'circle') {
+                    ctx.beginPath();
+                    ctx.arc(0, 0, s.size * 0.55, 0, Math.PI * 2);
+                    ctx.fill();
+                } else if (s.type === 'square') {
+                    const side = s.size * 0.9;
+                    ctx.fillRect(-side / 2, -side / 2, side, side);
+                } else if (s.type === 'triangle') {
+                    const r = s.size * 0.7;
+                    ctx.beginPath();
+                    ctx.moveTo(0, -r);
+                    ctx.lineTo(r * 0.866, r * 0.5);
+                    ctx.lineTo(-r * 0.866, r * 0.5);
+                    ctx.closePath();
+                    ctx.fill();
+                } else {
+                    this.drawStar(ctx, s.size * 0.65);
+                }
+
+                ctx.restore();
+            }
+
+            this.animId = requestAnimationFrame(() => this.loop());
+        }
+    };
+
+    /* =========================================================================
+       2. AUDIO SEGURO CON TONE.JS (NUNCA BLOQUEA LA INTERFAZ)
+       ========================================================================= */
+    const AudioFX = {
+        synth: null,
+        muted: false,
+        initialized: false,
+
+        init() {
+            if (this.initialized) return;
+            try {
+                if (typeof Tone === 'undefined') return;
+                Tone.start().catch(() => {});
+                this.synth = new Tone.PolySynth(Tone.Synth, {
+                    oscillator: { type: 'triangle' },
+                    envelope: { attack: 0.02, decay: 0.12, sustain: 0.1, release: 0.4 }
+                }).toDestination();
+                this.synth.volume.value = -10;
+                this.initialized = true;
+            } catch (e) {
+                console.warn('Audio no disponible:', e);
+            }
+        },
+
+        toggleMute() {
+            this.muted = !this.muted;
+            const icon = document.getElementById('mute-icon');
+            const label = document.getElementById('mute-label');
+            if (this.muted) {
+                icon.className = 'fas fa-volume-mute text-slate-400';
+                label.textContent = 'Silenciado';
+            } else {
+                icon.className = 'fas fa-volume-up text-yellow-400';
+                label.textContent = 'Sonido activo';
+                this.init();
+                this.playClick();
+            }
+        },
+
+        playClick() {
+            if (this.muted) return;
+            try {
+                this.init();
+                if (!this.synth) return;
+                this.synth.triggerAttackRelease('E5', '16n');
+            } catch (e) {}
+        },
+
+        playSelectNeutral() {
+            if (this.muted) return;
+            try {
+                this.init();
+                if (!this.synth) return;
+                const now = Tone.now();
+                this.synth.triggerAttackRelease('C5', '16n', now);
+                this.synth.triggerAttackRelease('G5', '16n', now + 0.08);
+            } catch (e) {}
+        },
+
+        playTick(urgent = false) {
+            if (this.muted) return;
+            try {
+                if (!this.synth) return;
+                this.synth.triggerAttackRelease(urgent ? 'A5' : 'E5', '32n');
+            } catch (e) {}
+        },
+
+        playTimeUp() {
+            if (this.muted) return;
+            try {
+                this.init();
+                if (!this.synth) return;
+                const now = Tone.now();
+                this.synth.triggerAttackRelease('G4', '8n', now);
+                this.synth.triggerAttackRelease('D4', '4n', now + 0.14);
+            } catch (e) {}
+        },
+
+        playError() {
+            if (this.muted) return;
+            try {
+                this.init();
+                if (!this.synth) return;
+                const now = Tone.now();
+                this.synth.triggerAttackRelease('D3', '16n', now);
+                this.synth.triggerAttackRelease('C3', '8n', now + 0.1);
+            } catch (e) {}
+        },
+
+        playFanfare() {
+            if (this.muted) return;
+            try {
+                this.init();
+                if (!this.synth) return;
+                const now = Tone.now();
+                this.synth.triggerAttackRelease('C5', '8n', now);
+                this.synth.triggerAttackRelease('E5', '8n', now + 0.12);
+                this.synth.triggerAttackRelease('G5', '8n', now + 0.24);
+                this.synth.triggerAttackRelease(['C6', 'E6'], '2n', now + 0.36);
+            } catch (e) {}
+        }
+    };
+
+    /* =========================================================================
+       3. RENDERIZADO KATEX INFALIBLE CON RESPALDO LIMPIO
+       ========================================================================= */
+    function renderLatex(expr, displayMode = false) {
+        try {
+            if (window.katex && typeof window.katex.renderToString === 'function') {
+                return window.katex.renderToString(expr, {
+                    throwOnError: false,
+                    displayMode: displayMode
+                });
+            }
+        } catch (e) {
+            console.warn('Error renderizando KaTeX:', e);
+        }
+
+        // Respaldo legible si KaTeX aún no está disponible
+        const fallback = expr
+            .replace(/\\frac\{([^}]+)\}\{([^}]+)\}/g, '<span class="inline-flex flex-col items-center align-middle mx-1 leading-none"><span class="border-b-2 border-current px-1 pb-0.5">$1</span><span class="px-1 pt-0.5">$2</span></span>')
+            .replace(/\\cdot/g, ' &middot; ')
+            .replace(/\\div/g, ' &divide; ');
+        return `<span class="font-bold">${fallback}</span>`;
+    }
+
+    /* =========================================================================
+       4. GENERADORES DE GRÁFICOS SVG 100% PRECISOS
+       ========================================================================= */
+
+    /**
+     * Dibuja un círculo dividido en 'den' sectores iguales con 'num' pintados.
+     * Maneja correctamente el caso num === den usando un <circle> completo
+     * para evitar el bug del arco SVG de 360 grados.
+     */
+    function drawPieSVG(num, den, fillColor = '#ec4899', size = 128) {
+        const cx = 60;
+        const cy = 60;
+        const r = 52;
+        const emptyFill = '#f1f5f9';
+        const strokeColor = '#1e293b';
+
+        let filledShapes = '';
+
+        if (num >= den) {
+            // Entero completo: círculo sólido sin depender de arco de 360°
+            filledShapes = `<circle cx="${cx}" cy="${cy}" r="${r}" fill="${fillColor}" />`;
+        } else if (num > 0) {
+            for (let i = 0; i < num; i++) {
+                const startAngle = (i / den) * Math.PI * 2 - Math.PI / 2;
+                const endAngle = ((i + 1) / den) * Math.PI * 2 - Math.PI / 2;
+                const x1 = cx + r * Math.cos(startAngle);
+                const y1 = cy + r * Math.sin(startAngle);
+                const x2 = cx + r * Math.cos(endAngle);
+                const y2 = cy + r * Math.sin(endAngle);
+                const largeArc = (endAngle - startAngle) > Math.PI ? 1 : 0;
+
+                filledShapes += `<path d="M ${cx} ${cy} L ${x1.toFixed(2)} ${y1.toFixed(2)} A ${r} ${r} 0 ${largeArc} 1 ${x2.toFixed(2)} ${y2.toFixed(2)} Z" fill="${fillColor}" />`;
+            }
+        }
+
+        // Líneas divisorias radiales siempre encima
+        let dividers = '';
+        if (den > 1) {
+            for (let i = 0; i < den; i++) {
+                const angle = (i / den) * Math.PI * 2 - Math.PI / 2;
+                const x = cx + r * Math.cos(angle);
+                const y = cy + r * Math.sin(angle);
+                dividers += `<line x1="${cx}" y1="${cy}" x2="${x.toFixed(2)}" y2="${y.toFixed(2)}" stroke="${strokeColor}" stroke-width="2.4" stroke-linecap="round" />`;
+            }
+        }
+
+        return `
+            <svg viewBox="0 0 120 120" width="${size}" height="${size}" class="max-w-full h-auto drop-shadow-sm" role="img" aria-label="Gráfico circular de ${num} de ${den} partes">
+                <circle cx="${cx}" cy="${cy}" r="${r}" fill="${emptyFill}" />
+                ${filledShapes}
+                ${dividers}
+                <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${strokeColor}" stroke-width="3" />
+            </svg>
+        `;
+    }
+
+    /**
+     * Dibuja una barra rectangular dividida en 'den' partes iguales con 'num' pintadas.
+     */
+    function drawBarSVG(num, den, fillColor = '#3b82f6', width = 220, height = 54) {
+        const pad = 4;
+        const innerW = width - pad * 2;
+        const innerH = height - pad * 2;
+        const cellW = innerW / den;
+        const emptyFill = '#f1f5f9';
+        const strokeColor = '#1e293b';
+
+        let rects = '';
+        for (let i = 0; i < den; i++) {
+            const x = pad + i * cellW;
+            const fill = i < num ? fillColor : emptyFill;
+            rects += `<rect x="${x.toFixed(2)}" y="${pad}" width="${cellW.toFixed(2)}" height="${innerH}" fill="${fill}" stroke="${strokeColor}" stroke-width="2.4" />`;
+        }
+
+        return `
+            <svg viewBox="0 0 ${width} ${height}" width="${width}" height="${height}" class="max-w-full h-auto drop-shadow-sm" role="img" aria-label="Barra dividida en ${den} partes con ${num} pintadas">
+                ${rects}
+                <rect x="${pad}" y="${pad}" width="${innerW}" height="${innerH}" fill="none" stroke="${strokeColor}" stroke-width="3" rx="4" />
+            </svg>
+        `;
+    }
+
+    /**
+     * Dibuja una cuadrícula de rows x cols con 'num' celdas pintadas.
+     */
+    function drawGridSVG(num, rows, cols, fillColor = '#8b5cf6', width = 180, height = 128) {
+        const pad = 4;
+        const innerW = width - pad * 2;
+        const innerH = height - pad * 2;
+        const cellW = innerW / cols;
+        const cellH = innerH / rows;
+        const emptyFill = '#f1f5f9';
+        const strokeColor = '#1e293b';
+
+        let cells = '';
+        let count = 0;
+        for (let r = 0; r < rows; r++) {
+            for (let c = 0; c < cols; c++) {
+                const x = pad + c * cellW;
+                const y = pad + r * cellH;
+                const fill = count < num ? fillColor : emptyFill;
+                cells += `<rect x="${x.toFixed(2)}" y="${y.toFixed(2)}" width="${cellW.toFixed(2)}" height="${cellH.toFixed(2)}" fill="${fill}" stroke="${strokeColor}" stroke-width="2.2" />`;
+                count++;
+            }
+        }
+
+        return `
+            <svg viewBox="0 0 ${width} ${height}" width="${width}" height="${height}" class="max-w-full h-auto drop-shadow-sm" role="img" aria-label="Cuadrícula de ${rows * cols} partes con ${num} pintadas">
+                ${cells}
+                <rect x="${pad}" y="${pad}" width="${innerW}" height="${innerH}" fill="none" stroke="${strokeColor}" stroke-width="3" rx="4" />
+            </svg>
+        `;
+    }
+
+    /**
+     * Dibuja un número mixto: 'wholes' enteros completos divididos en 'den' partes
+     * más 1 figura adicional con 'num'/'den' pintado.
+     */
+    function drawMixedSVG(wholes, num, den, type = 'pie', fillColor = '#f59e0b') {
+        let items = '';
+        const pieSize = 104;
+        const barW = 148;
+        const barH = 48;
+
+        for (let i = 0; i < wholes; i++) {
+            items += type === 'pie'
+                ? drawPieSVG(den, den, fillColor, pieSize)
+                : drawBarSVG(den, den, fillColor, barW, barH);
+        }
+
+        if (num > 0) {
+            items += type === 'pie'
+                ? drawPieSVG(num, den, fillColor, pieSize)
+                : drawBarSVG(num, den, fillColor, barW, barH);
+        }
+
+        return `
+            <div class="flex flex-wrap items-center justify-center gap-3 sm:gap-4 p-3 bg-slate-50 border-2 border-slate-200 rounded-2xl">
+                ${items}
+            </div>
+        `;
+    }
+
+    /**
+     * Crea una tarjeta de opción numérica en KaTeX grande y colorido
+     * con una pequeña insignia visual neutra.
+     */
+    function renderFractionOptionCard(latexExpr, colorClass, pillText) {
+        return `
+            <div class="flex flex-col items-center justify-center py-2">
+                <div class="math-option ${colorClass}">
+                    ${renderLatex(latexExpr)}
+                </div>
+                <span class="mt-2 inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider px-3 py-1 rounded-full bg-slate-100 text-slate-600 border border-slate-200">
+                    <i class="fas fa-shapes text-[10px] opacity-75"></i> ${pillText}
+                </span>
+            </div>
+        `;
+    }
+
+    /* =========================================================================
+       5. BANCO DE 8 PREGUNTAS VERIFICADAS MATEMÁTICAMENTE
+       ========================================================================= */
+    function buildQuestions() {
+        return [
+            // P1: Equivalente - Ampliación (círculo)
+            {
+                id: 1,
+                block: 'equiv',
+                topicLabel: 'Equivalentes · Ampliación',
+                promptHTML: `¿Qué gráfico representa una fracción equivalente a <span class="math-inline">${renderLatex('\\frac{2}{3}')}</span>?`,
+                visualHTML: '',
+                options: [
+                    { id: '1a', isCorrect: true,  latex: '\\frac{4}{6}', html: drawPieSVG(4, 6, '#ec4899', 124) },
+                    { id: '1b', isCorrect: false, latex: '\\frac{3}{6}', html: drawPieSVG(3, 6, '#ec4899', 124) },
+                    { id: '1c', isCorrect: false, latex: '\\frac{4}{8}', html: drawPieSVG(4, 8, '#ec4899', 124) },
+                    { id: '1d', isCorrect: false, latex: '\\frac{3}{5}', html: drawPieSVG(3, 5, '#ec4899', 124) }
+                ],
+                explanationHTML: `Ampliamos multiplicando numerador y denominador por 2: <span class="math-solution">${renderLatex('\\frac{2}{3} = \\frac{2 \\cdot 2}{3 \\cdot 2} = \\frac{4}{6}')}</span>.`
+            },
+
+            // P2: Equivalente - Ampliación visual (barra)
+            {
+                id: 2,
+                block: 'equiv',
+                topicLabel: 'Equivalentes · Ampliación Visual',
+                promptHTML: `Observa el gráfico de la fracción <span class="math-inline">${renderLatex('\\frac{1}{2}')}</span>. ¿Cuál de los siguientes gráficos es equivalente?`,
+                visualHTML: drawBarSVG(1, 2, '#2563eb', 250, 60),
+                options: [
+                    { id: '2a', isCorrect: true,  latex: '\\frac{3}{6}', html: drawBarSVG(3, 6, '#06b6d4', 210, 52) },
+                    { id: '2b', isCorrect: false, latex: '\\frac{2}{6}', html: drawBarSVG(2, 6, '#06b6d4', 210, 52) },
+                    { id: '2c', isCorrect: false, latex: '\\frac{3}{8}', html: drawBarSVG(3, 8, '#06b6d4', 210, 52) },
+                    { id: '2d', isCorrect: false, latex: '\\frac{4}{6}', html: drawBarSVG(4, 6, '#06b6d4', 210, 52) }
+                ],
+                explanationHTML: `Multiplicamos numerador y denominador por 3 para obtener la fracción equivalente: <span class="math-solution">${renderLatex('\\frac{1}{2} = \\frac{1 \\cdot 3}{2 \\cdot 3} = \\frac{3}{6}')}</span>.`
+            },
+
+            // P3: Equivalente - Simplificación visual (círculo)
+            {
+                id: 3,
+                block: 'equiv',
+                topicLabel: 'Equivalentes · Simplificación',
+                promptHTML: `Observa el gráfico de <span class="math-inline">${renderLatex('\\frac{6}{8}')}</span>. ¿Qué gráfico representa su fracción equivalente simplificada?`,
+                visualHTML: drawPieSVG(6, 8, '#10b981', 132),
+                options: [
+                    { id: '3a', isCorrect: true,  latex: '\\frac{3}{4}', html: drawPieSVG(3, 4, '#14b8a6', 124) },
+                    { id: '3b', isCorrect: false, latex: '\\frac{2}{4}', html: drawPieSVG(2, 4, '#14b8a6', 124) },
+                    { id: '3c', isCorrect: false, latex: '\\frac{3}{5}', html: drawPieSVG(3, 5, '#14b8a6', 124) },
+                    { id: '3d', isCorrect: false, latex: '\\frac{2}{3}', html: drawPieSVG(2, 3, '#14b8a6', 124) }
+                ],
+                explanationHTML: `Simplificamos dividiendo numerador y denominador entre 2: <span class="math-solution">${renderLatex('\\frac{6}{8} = \\frac{6 \\div 2}{8 \\div 2} = \\frac{3}{4}')}</span>.`
+            },
+
+            // P4: Equivalente - Ampliación en cuadrícula (3x4 = 12)
+            {
+                id: 4,
+                block: 'equiv',
+                topicLabel: 'Equivalentes · Cuadrículas',
+                promptHTML: `¿Qué gráfico representa una fracción equivalente a <span class="math-inline">${renderLatex('\\frac{3}{4}')}</span>?`,
+                visualHTML: '',
+                options: [
+                    { id: '4a', isCorrect: true,  latex: '\\frac{9}{12}', html: drawGridSVG(9, 3, 4, '#8b5cf6', 176, 122) },
+                    { id: '4b', isCorrect: false, latex: '\\frac{7}{12}', html: drawGridSVG(7, 3, 4, '#8b5cf6', 176, 122) },
+                    { id: '4c', isCorrect: false, latex: '\\frac{8}{12}', html: drawGridSVG(8, 3, 4, '#8b5cf6', 176, 122) },
+                    { id: '4d', isCorrect: false, latex: '\\frac{6}{12}', html: drawGridSVG(6, 3, 4, '#8b5cf6', 176, 122) }
+                ],
+                explanationHTML: `Ampliamos multiplicando arriba y abajo por 3: <span class="math-solution">${renderLatex('\\frac{3}{4} = \\frac{3 \\cdot 3}{4 \\cdot 3} = \\frac{9}{12}')}</span>.`
+            },
+
+            // P5: Equivalente - Simplificación en barra
+            {
+                id: 5,
+                block: 'equiv',
+                topicLabel: 'Equivalentes · Simplificación',
+                promptHTML: `Observa el gráfico que representa <span class="math-inline">${renderLatex('\\frac{4}{10}')}</span>. ¿Qué gráfico muestra su fracción equivalente simplificada?`,
+                visualHTML: drawBarSVG(4, 10, '#f97316', 260, 56),
+                options: [
+                    { id: '5a', isCorrect: true,  latex: '\\frac{2}{5}', html: drawBarSVG(2, 5, '#f59e0b', 210, 52) },
+                    { id: '5b', isCorrect: false, latex: '\\frac{1}{5}', html: drawBarSVG(1, 5, '#f59e0b', 210, 52) },
+                    { id: '5c', isCorrect: false, latex: '\\frac{3}{5}', html: drawBarSVG(3, 5, '#f59e0b', 210, 52) },
+                    { id: '5d', isCorrect: false, latex: '\\frac{2}{4}', html: drawBarSVG(2, 4, '#f59e0b', 210, 52) }
+                ],
+                explanationHTML: `Dividimos numerador y denominador entre 2 para simplificar: <span class="math-solution">${renderLatex('\\frac{4}{10} = \\frac{4 \\div 2}{10 \\div 2} = \\frac{2}{5}')}</span>.`
+            },
+
+            // P6: Equivalente - Simplificación en cuadrícula 3x3 a círculo
+            {
+                id: 6,
+                block: 'equiv',
+                topicLabel: 'Equivalentes · Simplificación',
+                promptHTML: `Observa la cuadrícula que representa <span class="math-inline">${renderLatex('\\frac{6}{9}')}</span>. ¿Qué gráfico representa la misma cantidad?`,
+                visualHTML: drawGridSVG(6, 3, 3, '#a855f7', 136, 136),
+                options: [
+                    { id: '6a', isCorrect: true,  latex: '\\frac{2}{3}', html: drawPieSVG(2, 3, '#d946ef', 124) },
+                    { id: '6b', isCorrect: false, latex: '\\frac{1}{3}', html: drawPieSVG(1, 3, '#d946ef', 124) },
+                    { id: '6c', isCorrect: false, latex: '\\frac{3}{4}', html: drawPieSVG(3, 4, '#d946ef', 124) },
+                    { id: '6d', isCorrect: false, latex: '\\frac{1}{2}', html: drawPieSVG(1, 2, '#d946ef', 124) }
+                ],
+                explanationHTML: `Simplificamos dividiendo numerador y denominador entre 3: <span class="math-solution">${renderLatex('\\frac{6}{9} = \\frac{6 \\div 3}{9 \\div 3} = \\frac{2}{3}')}</span>.`
+            },
+
+            // P7: Mixto a Impropia (1 3/4 con círculos)
+            {
+                id: 7,
+                block: 'mixed',
+                topicLabel: 'Mixto a Impropia',
+                promptHTML: `Observa el gráfico del número mixto <span class="math-inline">${renderLatex('1\\frac{3}{4}')}</span>. ¿Qué fracción impropia representa?`,
+                visualHTML: drawMixedSVG(1, 3, 4, 'pie', '#f59e0b'),
+                options: [
+                    { id: '7a', isCorrect: true,  latex: '\\frac{7}{4}', html: renderFractionOptionCard('\\frac{7}{4}', 'text-blue-600', 'Fracción impropia') },
+                    { id: '7b', isCorrect: false, latex: '\\frac{5}{4}', html: renderFractionOptionCard('\\frac{5}{4}', 'text-fuchsia-600', 'Fracción impropia') },
+                    { id: '7c', isCorrect: false, latex: '\\frac{6}{4}', html: renderFractionOptionCard('\\frac{6}{4}', 'text-emerald-600', 'Fracción impropia') },
+                    { id: '7d', isCorrect: false, latex: '\\frac{4}{7}', html: renderFractionOptionCard('\\frac{4}{7}', 'text-orange-600', 'Fracción propia') }
+                ],
+                explanationHTML: `Multiplicamos el entero por el denominador y sumamos el numerador: <span class="math-solution">${renderLatex('1\\frac{3}{4} = \\frac{1 \\cdot 4 + 3}{4} = \\frac{7}{4}')}</span>.`
+            },
+
+            // P8: Mixto a Impropia (2 1/3 con barras)
+            {
+                id: 8,
+                block: 'mixed',
+                topicLabel: 'Mixto a Impropia',
+                promptHTML: `Observa el gráfico del número mixto <span class="math-inline">${renderLatex('2\\frac{1}{3}')}</span>. ¿Qué fracción impropia representa?`,
+                visualHTML: drawMixedSVG(2, 1, 3, 'bar', '#3b82f6'),
+                options: [
+                    { id: '8a', isCorrect: true,  latex: '\\frac{7}{3}', html: renderFractionOptionCard('\\frac{7}{3}', 'text-indigo-600', 'Fracción impropia') },
+                    { id: '8b', isCorrect: false, latex: '\\frac{5}{3}', html: renderFractionOptionCard('\\frac{5}{3}', 'text-pink-600', 'Fracción impropia') },
+                    { id: '8c', isCorrect: false, latex: '\\frac{6}{3}', html: renderFractionOptionCard('\\frac{6}{3}', 'text-teal-600', 'Fracción impropia') },
+                    { id: '8d', isCorrect: false, latex: '\\frac{8}{3}', html: renderFractionOptionCard('\\frac{8}{3}', 'text-amber-600', 'Fracción impropia') }
+                ],
+                explanationHTML: `Multiplicamos los 2 enteros por 3 y sumamos 1 tercio adicional: <span class="math-solution">${renderLatex('2\\frac{1}{3} = \\frac{2 \\cdot 3 + 1}{3} = \\frac{7}{3}')}</span>.`
+            }
+        ];
+    }
+
+    /* =========================================================================
+       6. ASISTENTE PROFEBOT (SOLO ÁNIMOS NEUTRALES, CERO PISTAS)
+       ========================================================================= */
+    const ProfeBot = {
+        phrases: [
+            '¡Tú puedes! Observa bien cada parte coloreada.',
+            'Cuenta despacio las partes totales de cada figura.',
+            '¡Vas genial! Tómate tu tiempo para comparar.',
+            '¡Excelente concentración! Sigue adelante.',
+            'Recuerda: las fracciones equivalentes representan la misma porción.'
+        ],
+
+        say(htmlMessage) {
+            const bubble = document.getElementById('bot-bubble');
+            if (!bubble) return;
+            bubble.innerHTML = htmlMessage;
+            bubble.style.transform = 'scale(1.04)';
+            setTimeout(() => {
+                bubble.style.transform = 'scale(1)';
+            }, 180);
+        },
+
+        cheer() {
+            AudioFX.playClick();
+            const msg = this.phrases[Math.floor(Math.random() * this.phrases.length)];
+            this.say(msg);
+        }
+    };
+
+    /* =========================================================================
+       7. ESTADO GLOBAL Y MOTOR DEL CUESTIONARIO (SIN CONDICIONES DE CARRERA)
+       ========================================================================= */
+    const QUESTION_SECONDS = 120; // 2 minutos exactos
+    const TEACHER_KEY = '21032017';
+
+    let quizData = [];
+    let currentIdx = 0;
+    let studentRecords = [];
+    let timeLeft = QUESTION_SECONDS;
+    let timerInterval = null;
+    let isAdvancing = false;
+
+    function shuffleArray(arr) {
+        const copy = arr.slice();
+        for (let i = copy.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [copy[i], copy[j]] = [copy[j], copy[i]];
+        }
+        return copy;
+    }
+
+    function showScreen(screenId) {
+        document.querySelectorAll('.screen-view').forEach(el => {
+            el.classList.remove('active');
+        });
+        const target = document.getElementById(screenId);
+        if (target) {
+            target.classList.add('active');
+        }
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function clearQuizTimer() {
+        if (timerInterval !== null) {
+            clearInterval(timerInterval);
+            timerInterval = null;
+        }
+    }
+
+    function startQuiz() {
+        // Iniciar audio sin bloquear jamás el flujo
+        AudioFX.init();
+        AudioFX.playClick();
+
+        // Construir preguntas y barajar alternativas en cada intento
+        quizData = buildQuestions().map(q => ({
+            ...q,
+            options: shuffleArray(q.options)
+        }));
+
+        currentIdx = 0;
+        studentRecords = [];
+        isAdvancing = false;
+        clearQuizTimer();
+
+        showScreen('screen-quiz');
+        ProfeBot.say('¡Comenzamos! Tienes 2 minutos para cada ejercicio. ¡Mucho ánimo!');
+        renderQuestion();
+    }
+
+    function renderProgressDots() {
+        const container = document.getElementById('progress-dots');
+        if (!container) return;
+        let html = '';
+        for (let i = 0; i < quizData.length; i++) {
+            let dotClass = 'bg-white/25 w-3 h-3';
+            if (i < currentIdx) {
+                dotClass = 'bg-emerald-400 w-3 h-3';
+            } else if (i === currentIdx) {
+                dotClass = 'bg-yellow-400 w-7 h-3 shadow-[0_0_10px_rgba(250,204,21,0.8)]';
+            }
+            html += `<div class="rounded-full transition-all duration-300 ${dotClass}"></div>`;
+        }
+        container.innerHTML = html;
+    }
+
+    function renderQuestion() {
+        clearQuizTimer();
+        isAdvancing = false;
+
+        const q = quizData[currentIdx];
+        if (!q) return;
+
+        // Encabezados
+        document.getElementById('q-badge-num').textContent = `Pregunta ${currentIdx + 1} de ${quizData.length}`;
+        document.getElementById('q-badge-topic').textContent = q.topicLabel;
+
+        // Enunciado y gráfico
+        document.getElementById('question-prompt').innerHTML = q.promptHTML;
+        const visualBox = document.getElementById('question-visual');
+        if (q.visualHTML) {
+            visualBox.innerHTML = q.visualHTML;
+            visualBox.classList.remove('hidden');
+        } else {
+            visualBox.innerHTML = '';
+            visualBox.classList.add('hidden');
+        }
+
+        // Ocultar aviso neutral
+        const banner = document.getElementById('status-banner');
+        banner.classList.add('hidden');
+        banner.textContent = '';
+
+        // Renderizar 4 alternativas
+        const grid = document.getElementById('options-grid');
+        grid.innerHTML = '';
+        const letters = ['A', 'B', 'C', 'D'];
+        const badgeColors = [
+            'from-blue-500 to-cyan-500',
+            'from-fuchsia-500 to-pink-500',
+            'from-amber-500 to-orange-500',
+            'from-emerald-500 to-teal-500'
+        ];
+
+        q.options.forEach((opt, idx) => {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'option-btn p-4 sm:p-5 flex flex-col items-center justify-center gap-3 min-h-[155px] shadow-md';
+            btn.innerHTML = `
+                <div class="w-full flex items-center justify-between">
+                    <span class="w-9 h-9 rounded-xl bg-gradient-to-br ${badgeColors[idx]} text-white font-fun font-bold text-lg flex items-center justify-center shadow">
+                        ${letters[idx]}
+                    </span>
+                    <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Opción ${letters[idx]}</span>
+                </div>
+                <div class="flex-1 flex items-center justify-center w-full py-1">
+                    ${opt.html}
+                </div>
+            `;
+            btn.addEventListener('click', () => handleAnswer(opt, letters[idx], btn));
+            grid.appendChild(btn);
+        });
+
+        renderProgressDots();
+        startQuestionTimer();
+
+        // Mensaje de ánimo a mitad del camino
+        if (currentIdx === 3) {
+            ProfeBot.say('¡Vas por la mitad! Sigue observando con mucha calma.');
+        } else if (currentIdx === 6) {
+            ProfeBot.say('¡Últimos 2 retos de números mixtos! ¡Tú puedes!');
+        }
+    }
+
+    function updateTimerUI() {
+        const mins = Math.floor(timeLeft / 60);
+        const secs = timeLeft % 60;
+        const formatted = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+
+        const timerText = document.getElementById('timer-text');
+        const timerBox = document.getElementById('timer-box');
+        const timerBar = document.getElementById('timer-bar');
+
+        if (timerText) timerText.textContent = formatted;
+        const pct = Math.max(0, (timeLeft / QUESTION_SECONDS) * 100);
+        if (timerBar) timerBar.style.width = `${pct}%`;
+
+        // Cambios de color: verde (>45s) -> amarillo (16-45s) -> rojo pulsante (<=15s)
+        timerBox.classList.remove('bg-emerald-500', 'bg-amber-500', 'bg-red-600', 'timer-danger');
+        timerBar.classList.remove('bg-emerald-400', 'bg-amber-400', 'bg-red-500');
+
+        if (timeLeft <= 15) {
+            timerBox.classList.add('bg-red-600', 'timer-danger');
+            timerBar.classList.add('bg-red-500');
+        } else if (timeLeft <= 45) {
+            timerBox.classList.add('bg-amber-500');
+            timerBar.classList.add('bg-amber-400');
+        } else {
+            timerBox.classList.add('bg-emerald-500');
+            timerBar.classList.add('bg-emerald-400');
+        }
+    }
+
+    function startQuestionTimer() {
+        clearQuizTimer();
+        timeLeft = QUESTION_SECONDS;
+        updateTimerUI();
+
+        timerInterval = setInterval(() => {
+            if (isAdvancing) {
+                clearQuizTimer();
+                return;
+            }
+
+            timeLeft--;
+            updateTimerUI();
+
+            if (timeLeft > 0 && timeLeft <= 10) {
+                AudioFX.playTick(timeLeft <= 3);
+            }
+
+            if (timeLeft <= 0) {
+                handleTimeOut();
+            }
+        }, 1000);
+    }
+
+    function disableAllOptions() {
+        document.querySelectorAll('#options-grid .option-btn').forEach(btn => {
+            btn.disabled = true;
+        });
+    }
+
+    function handleAnswer(selectedOpt, selectedLetter, clickedBtn) {
+        // Guard booleano anti-doble-clic / condición de carrera
+        if (isAdvancing) return;
+        isAdvancing = true;
+        clearQuizTimer();
+        disableAllOptions();
+
+        // Confirmación estrictamente neutral (cero spoilers)
+        clickedBtn.classList.add('selected-neutral');
+        AudioFX.playSelectNeutral();
+
+        const banner = document.getElementById('status-banner');
+        banner.className = 'mt-4 py-3 px-5 rounded-2xl font-fun font-bold text-center text-base sm:text-lg bg-blue-100 text-blue-800 border-2 border-blue-300 shadow-sm';
+        banner.innerHTML = `<i class="fas fa-check-circle mr-2"></i>¡Respuesta registrada! Avanzando...`;
+        banner.classList.remove('hidden');
+
+        const q = quizData[currentIdx];
+        studentRecords.push({
+            question: q,
+            selectedOption: selectedOpt,
+            selectedLetter: selectedLetter,
+            isCorrect: Boolean(selectedOpt.isCorrect),
+            timedOut: false
+        });
+
+        setTimeout(() => {
+            advanceToNext();
+        }, 600);
+    }
+
+    function handleTimeOut() {
+        if (isAdvancing) return;
+        isAdvancing = true;
+        clearQuizTimer();
+        disableAllOptions();
+
+        AudioFX.playTimeUp();
+
+        const banner = document.getElementById('status-banner');
+        banner.className = 'mt-4 py-3 px-5 rounded-2xl font-fun font-bold text-center text-base sm:text-lg bg-amber-100 text-amber-900 border-2 border-amber-300 shadow-sm';
+        banner.innerHTML = `<i class="fas fa-hourglass-end mr-2"></i>Tiempo agotado. Pasando a la siguiente pregunta...`;
+        banner.classList.remove('hidden');
+
+        const q = quizData[currentIdx];
+        studentRecords.push({
+            question: q,
+            selectedOption: null,
+            selectedLetter: null,
+            isCorrect: false,
+            timedOut: true
+        });
+
+        setTimeout(() => {
+            advanceToNext();
+        }, 750);
+    }
+
+    function advanceToNext() {
+        currentIdx++;
+        if (currentIdx < quizData.length) {
+            renderQuestion();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        } else {
+            openLockScreen();
+        }
+    }
+
+    /* =========================================================================
+       8. BLOQUEO DOCENTE (CLAVE EXACTA: 21032017)
+       ========================================================================= */
+    function openLockScreen() {
+        clearQuizTimer();
+        isAdvancing = false;
+
+        const input = document.getElementById('teacher-key-input');
+        const err = document.getElementById('lock-error-msg');
+        if (input) {
+            input.value = '';
+            input.type = 'password';
+        }
+        const eye = document.getElementById('key-eye-icon');
+        if (eye) eye.className = 'fas fa-eye';
+        if (err) err.classList.add('hidden');
+
+        showScreen('screen-lock');
+        ProfeBot.say('¡Terminaste las 8 preguntas! Ahora el profesor(a) desbloqueará tus resultados.');
+
+        setTimeout(() => {
+            if (input) input.focus();
+        }, 250);
+    }
+
+    function toggleKeyVisibility() {
+        const input = document.getElementById('teacher-key-input');
+        const eye = document.getElementById('key-eye-icon');
+        if (!input || !eye) return;
+        if (input.type === 'password') {
+            input.type = 'text';
+            eye.className = 'fas fa-eye-slash';
+        } else {
+            input.type = 'password';
+            eye.className = 'fas fa-eye';
+        }
+    }
+
+    function validateTeacherKey() {
+        const input = document.getElementById('teacher-key-input');
+        const err = document.getElementById('lock-error-msg');
+        const lockCard = document.getElementById('lock-card');
+        if (!input) return;
+
+        if (input.value.trim() === TEACHER_KEY) {
+            if (err) err.classList.add('hidden');
+            AudioFX.playFanfare();
+            launchConfettiSafe();
+            renderResultsScreen();
+        } else {
+            AudioFX.playError();
+            if (err) err.classList.remove('hidden');
+            if (lockCard) {
+                lockCard.classList.remove('animate-shake');
+                void lockCard.offsetWidth; // Reiniciar animación CSS
+                lockCard.classList.add('animate-shake');
+            }
+            input.select();
+        }
+    }
+
+    function launchConfettiSafe() {
+        try {
+            if (typeof confetti !== 'function') return;
+            confetti({
+                particleCount: 95,
+                spread: 80,
+                origin: { y: 0.6 },
+                colors: ['#38bdf8', '#facc15', '#ec4899', '#10b981', '#f97316']
+            });
+            setTimeout(() => {
+                try {
+                    confetti({
+                        particleCount: 65,
+                        angle: 60,
+                        spread: 65,
+                        origin: { x: 0, y: 0.65 }
+                    });
+                    confetti({
+                        particleCount: 65,
+                        angle: 120,
+                        spread: 65,
+                        origin: { x: 1, y: 0.65 }
+                    });
+                } catch (e) {}
+            }, 300);
+        } catch (e) {
+            console.warn('Confetti no disponible:', e);
+        }
+    }
+
+    /* =========================================================================
+       9. RESULTADOS FINALES Y SOLUCIONARIO VISUAL COMPLETO
+       ========================================================================= */
+    function renderResultsScreen() {
+        const total = studentRecords.length;
+        const hits = studentRecords.filter(r => r.isCorrect).length;
+        const gradeRaw = hits * 2.5;
+        const gradeText = Number.isInteger(gradeRaw) ? String(gradeRaw) : gradeRaw.toFixed(1);
+        const percent = Math.round((hits / total) * 100);
+
+        // Bloques
+        const equivRecords = studentRecords.filter(r => r.question.block === 'equiv');
+        const equivHits = equivRecords.filter(r => r.isCorrect).length;
+        const mixedRecords = studentRecords.filter(r => r.question.block === 'mixed');
+        const mixedHits = mixedRecords.filter(r => r.isCorrect).length;
+
+        // Actualizar métricas
+        document.getElementById('res-grade').innerHTML = `${gradeText}<span class="text-2xl text-blue-200"> / 20</span>`;
+        document.getElementById('res-hits').innerHTML = `${hits}<span class="text-2xl text-emerald-100"> / ${total}</span>`;
+        document.getElementById('res-percent').textContent = `${percent}%`;
+
+        document.getElementById('block-equiv-score').textContent = `${equivHits} / ${equivRecords.length}`;
+        document.getElementById('block-equiv-bar').style.width = `${Math.round((equivHits / equivRecords.length) * 100)}%`;
+
+        document.getElementById('block-mixed-score').textContent = `${mixedHits} / ${mixedRecords.length}`;
+        document.getElementById('block-mixed-bar').style.width = `${Math.round((mixedHits / mixedRecords.length) * 100)}%`;
+
+        // Mensaje de nivel alcanzado
+        const rankEl = document.getElementById('result-rank-badge');
+        if (gradeRaw >= 17.5) {
+            rankEl.textContent = '🌟 ¡Nivel Sobresaliente! Dominas las fracciones como un campeón.';
+            ProfeBot.say('¡Felicidades! ¡Obtuviste un resultado extraordinario!');
+        } else if (gradeRaw >= 12.5) {
+            rankEl.textContent = '🚀 ¡Buen trabajo! Vas por excelente camino en fracciones.';
+            ProfeBot.say('¡Muy bien! Revisa el solucionario para alcanzar el 20.');
+        } else {
+            rankEl.textContent = '💪 ¡Sigue practicando! Revisemos juntos el solucionario paso a paso.';
+            ProfeBot.say('¡Cada práctica te hace más fuerte! Mira las explicaciones paso a paso.');
+        }
+
+        // Construir Solucionario Visual de las 8 preguntas
+        const list = document.getElementById('solutions-list');
+        list.innerHTML = '';
+
+        studentRecords.forEach((rec, index) => {
+            const q = rec.question;
+            const correctOpt = q.options.find(o => o.isCorrect);
+
+            const statusBadge = rec.isCorrect
+                ? `<span class="inline-flex items-center gap-1.5 bg-emerald-100 text-emerald-800 border border-emerald-300 font-fun font-bold text-xs sm:text-sm px-3.5 py-1 rounded-full"><i class="fas fa-check-circle"></i> Correcta (+2.5 pts)</span>`
+                : rec.timedOut
+                    ? `<span class="inline-flex items-center gap-1.5 bg-amber-100 text-amber-800 border border-amber-300 font-fun font-bold text-xs sm:text-sm px-3.5 py-1 rounded-full"><i class="fas fa-clock"></i> Tiempo agotado (0 pts)</span>`
+                    : `<span class="inline-flex items-center gap-1.5 bg-red-100 text-red-800 border border-red-300 font-fun font-bold text-xs sm:text-sm px-3.5 py-1 rounded-full"><i class="fas fa-times-circle"></i> Incorrecta (0 pts)</span>`;
+
+            const borderAccent = rec.isCorrect ? 'border-l-emerald-500' : rec.timedOut ? 'border-l-amber-500' : 'border-l-red-500';
+
+            const studentChoiceHTML = rec.timedOut
+                ? `<div class="flex flex-col items-center justify-center py-6 text-amber-700 font-fun font-bold text-base">
+                        <i class="fas fa-hourglass-end text-3xl mb-2"></i>
+                        <span>No se marcó a tiempo</span>
+                   </div>`
+                : `<div class="flex flex-col items-center justify-center gap-2">
+                        <div class="scale-90">${rec.selectedOption.html}</div>
+                        <div class="text-sm font-bold text-slate-600">Opción ${rec.selectedLetter} (${renderLatex(rec.selectedOption.latex)})</div>
+                   </div>`;
+
+            const correctChoiceHTML = `
+                <div class="flex flex-col items-center justify-center gap-2">
+                    <div class="scale-90">${correctOpt.html}</div>
+                    <div class="text-sm font-bold text-emerald-700">Equivale a ${renderLatex(correctOpt.latex)}</div>
+                </div>
+            `;
+
+            const card = document.createElement('article');
+            card.className = `card-bright rounded-3xl p-5 sm:p-6 border-l-8 ${borderAccent}`;
+            card.innerHTML = `
+                <div class="flex flex-wrap items-center justify-between gap-2 mb-3 pb-3 border-b border-slate-200">
+                    <div class="flex items-center gap-2">
+                        <span class="w-8 h-8 rounded-xl bg-slate-800 text-white font-fun font-bold flex items-center justify-center text-sm">${index + 1}</span>
+                        <span class="font-fun font-bold text-slate-500 text-xs sm:text-sm uppercase tracking-wider">${q.topicLabel}</span>
+                    </div>
+                    ${statusBadge}
+                </div>
+
+                <h4 class="font-fun text-lg sm:text-xl font-bold text-slate-800 mb-3">${q.promptHTML}</h4>
+
+                ${q.visualHTML ? `<div class="flex justify-center my-3">${q.visualHTML}</div>` : ''}
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 my-4">
+                    <div class="rounded-2xl p-4 border-2 ${rec.isCorrect ? 'bg-emerald-50/70 border-emerald-200' : 'bg-slate-50 border-slate-200'}">
+                        <div class="text-xs font-fun font-bold uppercase tracking-wider text-slate-500 mb-2 text-center">
+                            Tu respuesta
+                        </div>
+                        ${studentChoiceHTML}
+                    </div>
+
+                    <div class="rounded-2xl p-4 border-2 bg-emerald-50 border-emerald-300">
+                        <div class="text-xs font-fun font-bold uppercase tracking-wider text-emerald-700 mb-2 text-center">
+                            <i class="fas fa-star mr-1"></i> Respuesta correcta
+                        </div>
+                        ${correctChoiceHTML}
+                    </div>
+                </div>
+
+                <div class="bg-blue-50 border-2 border-blue-200 rounded-2xl p-4 text-slate-800 text-sm sm:text-base font-semibold leading-relaxed">
+                    <span class="font-fun font-bold text-blue-700 mr-1"><i class="fas fa-lightbulb text-amber-500 mr-1"></i>Explicación:</span>
+                    ${q.explanationHTML}
+                </div>
+            `;
+
+            list.appendChild(card);
+        });
+
+        showScreen('screen-results');
+    }
+
+    function restartQuiz() {
+        clearQuizTimer();
+        isAdvancing = false;
+        AudioFX.playClick();
+        showScreen('screen-intro');
+        ProfeBot.say('¡Listos para un nuevo intento! Presiona INICIAR PRÁCTICA cuando quieras.');
+    }
+
+    /* =========================================================================
+       10. INICIALIZACIÓN AL CARGAR LA PÁGINA
+       ========================================================================= */
+    window.addEventListener('DOMContentLoaded', () => {
+        BgCanvas.init();
+
+        // Permitir presionar Enter en el campo de clave docente
+        const keyInput = document.getElementById('teacher-key-input');
+        if (keyInput) {
+            keyInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    validateTeacherKey();
+                }
+            });
+        }
+    });
+    </script>
+</body>
+</html>
